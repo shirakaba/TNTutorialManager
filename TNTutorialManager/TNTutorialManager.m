@@ -8,6 +8,14 @@
 
 #import "TNTutorialManager.h"
 
+//@implementation ShapeView
+//
+//+ (Class)layerClass
+//{
+//    return [CAShapeLayer class];
+//}
+//@end
+
 @implementation TNTutorialEdgeInsets
 {
 	UIEdgeInsets insets;
@@ -45,6 +53,8 @@
 	UIWindow *tutorialWindow;
 	UIViewController *tutorialViewController;
 	UIVisualEffectView *visualEffectView;
+    
+    UIInterfaceOrientation currentOrientation;
 }
 
 @end
@@ -62,14 +72,14 @@
 		
 		tutorialSkipButton = nil;
 		tutorialView = [[UIView alloc] initWithFrame:[UIScreen mainScreen].bounds];
-		[tutorialView setBackgroundColor:[UIColor colorWithWhite:0 alpha:0.5]];
+        [tutorialView setBackgroundColor:[UIColor colorWithWhite:0 alpha:0.5]];
 		
 		tutorialBlurView = [[UIView alloc] initWithFrame:tutorialView.bounds];
 		[tutorialBlurView setBackgroundColor:[UIColor clearColor]];
 		
 		[tutorialView insertSubview:tutorialBlurView atIndex:0];
 		
-		UIVisualEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleRegular];
+        UIVisualEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleRegular];
 		visualEffectView = [[UIVisualEffectView alloc] init];
 		
 		animator = [[UIViewPropertyAnimator alloc] initWithDuration:1 curve:UIViewAnimationCurveLinear animations:^{
@@ -83,7 +93,9 @@
 		
 		blurConstant = blurFactor;
 		
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleOrientationChange:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
+		// [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleOrientationChange:) name:UIDeviceOrientationDidChangeNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleOrientationChange:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
+        currentOrientation = [[UIApplication sharedApplication] statusBarOrientation];
 	}
 	
 	return self;
@@ -235,6 +247,12 @@
 					label.layer.masksToBounds = NO;
 					label.layer.shadowRadius = 8;
 					label.layer.shadowOpacity = 1;
+                    if (@available(iOS 11.0, *)) {
+                    } else {
+//                        label.layer.backgroundColor = [[UIColor colorWithWhite:0 alpha:0.33] CGColor];
+//                        CIFilter *blurFilter = [CIFilter filterWithName:@"CIGaussianBlur"];
+//                        label.layer.backgroundFilters = [NSArray arrayWithObject:blurFilter];
+                    }
 					label.layer.shadowOffset = CGSizeZero;
 					label.layer.shouldRasterize = YES;
 					label.layer.shadowColor = [[UIColor blackColor] CGColor];
@@ -267,10 +285,10 @@
 					[label setText:text];
 					NSDictionary *attributes = @{NSFontAttributeName: label.font};
                     
-                                        CGFloat TEXT_LEFT_PADDING = 8.f;
-                                        CGFloat TEXT_RIGHT_PADDING = TEXT_LEFT_PADDING;
-                                        CGFloat TEXT_TOP_PADDING = 8.f;
-                                        CGFloat TEXT_BOTTOM_PADDING = TEXT_TOP_PADDING;
+                    CGFloat TEXT_LEFT_PADDING = 8.f;
+                    CGFloat TEXT_RIGHT_PADDING = TEXT_LEFT_PADDING;
+                    CGFloat TEXT_TOP_PADDING = 8.f;
+                    CGFloat TEXT_BOTTOM_PADDING = TEXT_TOP_PADDING;
                     
 					NSNumber *position = nil;
 					if (positions && [positions count] > i) {
@@ -278,39 +296,39 @@
 					}
 					TNTutorialTextPosition pos = position?[position integerValue]:TNTutorialTextPositionTop;
                     
-                                        CGFloat textWidth;
-                                        if (pos == TNTutorialTextPositionTop || pos == TNTutorialTextPositionBottom) {
-                                            textWidth = SCREEN_WIDTH - (SCREEN_LEFT_PADDING + SCREEN_RIGHT_PADDING);
-                                        } else {
-                                            textWidth = (pos == TNTutorialTextPositionLeft) ?
-                                                highlightFrame.origin.y - (TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING) :
-                                                SCREEN_WIDTH - highlightFrame.origin.y - highlightFrame.size.width - (TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING);
-                                        }
-                                        
-                                        if (@available(iOS 11.0, *)) {
-                                            UIWindow *keyWindow = [[[UIApplication sharedApplication] delegate] window];
-                                            if(keyWindow){
-                                                UIEdgeInsets safeAreaInsets = keyWindow.safeAreaInsets;
-                                                CGFloat SAFE_WIDTH = SCREEN_WIDTH - (safeAreaInsets.left + safeAreaInsets.right);
-                                                textWidth = MIN(textWidth, SAFE_WIDTH);
-                                            }
-                                        }
+                    CGFloat textWidth;
+                    if (pos == TNTutorialTextPositionTop || pos == TNTutorialTextPositionBottom) {
+                        textWidth = SCREEN_WIDTH - (SCREEN_LEFT_PADDING + SCREEN_RIGHT_PADDING);
+                    } else {
+                        textWidth = (pos == TNTutorialTextPositionLeft) ?
+                            highlightFrame.origin.y - (TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING) :
+                            SCREEN_WIDTH - highlightFrame.origin.y - highlightFrame.size.width - (TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING);
+                    }
+                    
+                    if (@available(iOS 11.0, *)) {
+                        UIWindow *keyWindow = [[[UIApplication sharedApplication] delegate] window];
+                        if(keyWindow){
+                            UIEdgeInsets safeAreaInsets = keyWindow.safeAreaInsets;
+                            CGFloat SAFE_WIDTH = SCREEN_WIDTH - (safeAreaInsets.left + safeAreaInsets.right);
+                            textWidth = MIN(textWidth, SAFE_WIDTH);
+                        }
+                    }
 					
 					CGRect textFrame = [text boundingRectWithSize:CGSizeMake(textWidth, CGFLOAT_MAX) options:(NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading) attributes:attributes context:nil];
                     
-                                        if (pos == TNTutorialTextPositionTop || pos == TNTutorialTextPositionBottom) {
-                                            textFrame.origin.x = highlightFrame.origin.x + highlightFrame.size.width * 0.5f - textFrame.size.width * 0.5f;
-                                            
-                                            textFrame.origin.y = (pos == TNTutorialTextPositionTop) ?
-                                                highlightFrame.origin.y - textFrame.size.height - TEXT_BOTTOM_PADDING :
-                                                highlightFrame.origin.y + highlightFrame.size.height + TEXT_TOP_PADDING;
-                                        } else if (pos == TNTutorialTextPositionLeft || pos == TNTutorialTextPositionRight) {
-                                            textFrame.origin.y = highlightFrame.origin.y + highlightFrame.size.height * 0.5f - textFrame.size.height * 0.5f;
-                                            
-                                            textFrame.origin.x = (pos == TNTutorialTextPositionLeft) ?
-                                                highlightFrame.origin.x - TEXT_RIGHT_PADDING - textFrame.size.width :
-                                                highlightFrame.origin.x + highlightFrame.size.width + TEXT_LEFT_PADDING;
-                                        }
+                    if (pos == TNTutorialTextPositionTop || pos == TNTutorialTextPositionBottom) {
+                        textFrame.origin.x = highlightFrame.origin.x + highlightFrame.size.width * 0.5f - textFrame.size.width * 0.5f;
+                        
+                        textFrame.origin.y = (pos == TNTutorialTextPositionTop) ?
+                            highlightFrame.origin.y - textFrame.size.height - TEXT_BOTTOM_PADDING :
+                            highlightFrame.origin.y + highlightFrame.size.height + TEXT_TOP_PADDING;
+                    } else if (pos == TNTutorialTextPositionLeft || pos == TNTutorialTextPositionRight) {
+                        textFrame.origin.y = highlightFrame.origin.y + highlightFrame.size.height * 0.5f - textFrame.size.height * 0.5f;
+                        
+                        textFrame.origin.x = (pos == TNTutorialTextPositionLeft) ?
+                            highlightFrame.origin.x - TEXT_RIGHT_PADDING - textFrame.size.width :
+                            highlightFrame.origin.x + highlightFrame.size.width + TEXT_LEFT_PADDING;
+                    }
                     
 					if (textFrame.origin.x < SCREEN_LEFT_PADDING) {
 						textFrame.origin.x = SCREEN_LEFT_PADDING;
@@ -331,6 +349,8 @@
 		label.layer.masksToBounds = NO;
 		label.layer.shadowRadius = 8;
 		label.layer.shadowOpacity = 1;
+//        label.layer.borderColor = [[UIColor blackColor] CGColor];
+//        label.layer.borderWidth = 2.0;
 		label.layer.shadowOffset = CGSizeZero;
 		label.layer.shouldRasterize = YES;
 		label.layer.shadowColor = [[UIColor blackColor] CGColor];
@@ -366,14 +386,14 @@
 		
 		CGFloat textWidth = SCREEN_WIDTH - (SCREEN_LEFT_PADDING + SCREEN_RIGHT_PADDING);
         
-                if (@available(iOS 11.0, *)) {
-                    UIWindow *keyWindow = [[[UIApplication sharedApplication] delegate] window];
-                    if(keyWindow){
-                        UIEdgeInsets safeAreaInsets = keyWindow.safeAreaInsets;
-                        CGFloat SAFE_WIDTH = [UIScreen mainScreen].bounds.size.width - safeAreaInsets.left - safeAreaInsets.right;
-                        textWidth = MIN(textWidth, SAFE_WIDTH);
-                    }
-                }
+        if (@available(iOS 11.0, *)) {
+            UIWindow *keyWindow = [[[UIApplication sharedApplication] delegate] window];
+            if(keyWindow){
+                UIEdgeInsets safeAreaInsets = keyWindow.safeAreaInsets;
+                CGFloat SAFE_WIDTH = [UIScreen mainScreen].bounds.size.width - safeAreaInsets.left - safeAreaInsets.right;
+                textWidth = MIN(textWidth, SAFE_WIDTH);
+            }
+        }
         
 		CGRect rect = [text boundingRectWithSize:CGSizeMake(textWidth, CGFLOAT_MAX)
 										 options:NSStringDrawingUsesLineFragmentOrigin
@@ -430,11 +450,17 @@
 	[tutorialView setNeedsDisplay];
 	
 	{
-		CALayer* maskLayer = [CALayer layer];
-		maskLayer.frame = CGRectMake(0, 0, tutorialView.frame.size.width, tutorialView.frame.size.height);
-		maskLayer.contents = (__bridge id)[image CGImage];
-		
-		tutorialView.layer.mask = maskLayer;
+//        ShapeView* shapeView = [[ShapeView alloc] initWithFrame:CGRectMake(0, 0, tutorialView.frame.size.width, tutorialView.frame.size.height)];
+//        UIVisualEffect* blurEffect = [UIBlurEffect effectWithStyle: UIBlurEffectStyleRegular];
+//        UIVisualEffectView* effectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+//        shapeView.frame = effectView.frame;
+//        [tutorialView addSubview:effectView];
+        
+        CALayer* maskLayer = [CALayer layer];
+        maskLayer.frame = CGRectMake(0, 0, tutorialView.frame.size.width, tutorialView.frame.size.height);
+        maskLayer.contents = (__bridge id)[image CGImage];
+        
+        tutorialView.layer.mask = maskLayer;
 	}
 	
 	if ((![self.delegate respondsToSelector:@selector(tutorialHasSkipButton:)] || [self.delegate tutorialHasSkipButton:[self currentIndex]]) && [self currentIndex] < [self.delegate tutorialMaxIndex]-1) {

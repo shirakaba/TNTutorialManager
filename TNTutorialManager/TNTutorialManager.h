@@ -8,6 +8,9 @@
 
 #import <UIKit/UIKit.h>
 
+//@interface ShapeView : UIView
+//@end
+
 @interface TNTutorialEdgeInsets : NSObject
 
 -(instancetype)initWithEdgeInsets:(UIEdgeInsets)insets;
